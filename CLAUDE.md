@@ -4,8 +4,7 @@
 
 ## Session Protocol — MANDATORY
 
-All business intelligence lives in the private vault (git-tracked in claude-skills, never in this repo):
-`~/Workspace/claude-skills/kagaj-ai/` (symlinked to Claude memory)
+All business intelligence lives in the auto memory directory (never in this repo).
 
 ### Start of Session
 1. Read `memory/MEMORY.md` — quick context
