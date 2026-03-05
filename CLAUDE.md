@@ -4,8 +4,8 @@
 
 ## Session Protocol — MANDATORY
 
-All business intelligence lives in private memory (never in git):
-`~/.claude/projects/-Users-surya-techdev-Workspace-kagaj-ai/memory/`
+All business intelligence lives in the private vault (git-tracked in claude-skills, never in this repo):
+`~/Workspace/claude-skills/kagaj-ai/` (symlinked to Claude memory)
 
 ### Start of Session
 1. Read `memory/MEMORY.md` — quick context
