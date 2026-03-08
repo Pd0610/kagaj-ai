@@ -10,42 +10,45 @@ use Illuminate\Support\Facades\Blade;
 class DocumentRenderer
 {
     /**
-     * Ensure Mukta font is registered in DOMPDF's font cache.
-     * This is idempotent — DOMPDF skips if already cached.
-     */
-    public function ensureFontsRegistered(): void
-    {
-        $options = new Options;
-        $options->setIsRemoteEnabled(true);
-        $options->setChroot(base_path());
-        $dompdf = new Dompdf($options);
-        $fontMetrics = $dompdf->getFontMetrics();
-
-        if ($fontMetrics->getFont('Mukta')) {
-            return;
-        }
-
-        $fontMetrics->registerFont(
-            ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'normal'],
-            public_path('fonts/Mukta-Regular.ttf')
-        );
-
-        $fontMetrics->registerFont(
-            ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'bold'],
-            public_path('fonts/Mukta-Bold.ttf')
-        );
-    }
-
-    /**
      * Render a template's html_body with slot data, wrapped in a base HTML shell.
      */
     public function render(Template $template, array $slotData): string
     {
-        $this->ensureFontsRegistered();
-
         $body = Blade::render($template->html_body, $slotData);
 
         return $this->wrapInHtmlShell($body, $template->name_ne ?: $template->name_en);
+    }
+
+    /**
+     * Generate a PDF from HTML and save to the given path.
+     * Uses DOMPDF directly with Mukta font registered on the same instance.
+     */
+    public function generatePdf(string $html, string $outputPath): void
+    {
+        $options = new Options;
+        $options->setIsRemoteEnabled(true);
+        $options->setChroot(base_path());
+
+        $dompdf = new Dompdf($options);
+
+        // Register Mukta font on THIS instance so it's available during render
+        $fontMetrics = $dompdf->getFontMetrics();
+        if (! $fontMetrics->getFont('Mukta')) {
+            $fontMetrics->registerFont(
+                ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'normal'],
+                public_path('fonts/Mukta-Regular.ttf')
+            );
+            $fontMetrics->registerFont(
+                ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'bold'],
+                public_path('fonts/Mukta-Bold.ttf')
+            );
+        }
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('a4', 'portrait');
+        $dompdf->render();
+
+        file_put_contents($outputPath, $dompdf->output());
     }
 
     private function wrapInHtmlShell(string $body, string $title): string

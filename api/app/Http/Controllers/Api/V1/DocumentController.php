@@ -14,7 +14,6 @@ use App\Services\SlotValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Spatie\LaravelPdf\Facades\Pdf;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DocumentController extends Controller
@@ -74,10 +73,7 @@ class DocumentController extends Controller
             $pdfPath = "{$pdfDir}/{$document->uuid}.pdf";
             $fullPath = Storage::disk('local')->path($pdfPath);
 
-            Pdf::html($html)
-                ->driver('dompdf')
-                ->format('a4')
-                ->save($fullPath);
+            $this->renderer->generatePdf($html, $fullPath);
 
             $document->update([
                 'status' => DocumentStatus::Completed,
