@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2Icon, MinusIcon, PlusIcon } from "lucide-react";
+import { NepaliInput } from "@/components/nepali-input";
 
 type SlotData = Record<string, unknown>;
 
@@ -190,7 +191,22 @@ function SlotField({
         {slot.required && <span className="ml-0.5 text-destructive">*</span>}
       </Label>
 
-      {slot.type === "textarea" || slot.type === "textarea_ne" ? (
+      {slot.type === "text_ne" ? (
+        <NepaliInput
+          value={(value as string) ?? ""}
+          onChange={(val) => onChange(val)}
+          placeholder={slot.ai_hint ?? "Type in English, get Nepali suggestions"}
+          aria-invalid={!!fieldErrors}
+        />
+      ) : slot.type === "textarea_ne" ? (
+        <NepaliInput
+          value={(value as string) ?? ""}
+          onChange={(val) => onChange(val)}
+          multiline
+          placeholder={slot.ai_hint ?? "Type in English, get Nepali suggestions"}
+          aria-invalid={!!fieldErrors}
+        />
+      ) : slot.type === "textarea" ? (
         <textarea
           value={(value as string) ?? ""}
           onChange={(e) => onChange(e.target.value)}
