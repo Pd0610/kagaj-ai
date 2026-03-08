@@ -32,7 +32,46 @@ All business intelligence lives in the auto memory directory (never in this repo
 Surya has context between sessions. Jarvis doesn't. Session files ARE Jarvis's memory.
 
 ## Code Conventions
-_(To be established when we start building)_
+
+### General
+- **Monorepo**: `api/` (Laravel) + `web/` (Next.js) in one repo (D17)
+- **Dev env**: Sail for API stack (PHP 8.4, PostgreSQL 16, Redis 7), Next.js runs natively (Node 22)
+- **API port**: 8080 (avoids conflict with wagering platform on 80)
+
+### PHP / Laravel (`api/`)
+- **API-only** — no Blade views, no Vite, no web routes
+- **Enums**: PHP backed enums for all status/type fields (`App\Enums\*`)
+- **API envelope**: Every response wraps in `{ success, data, message, errors }`
+- **Money in paisa**: All amounts stored as integers (NPR * 100) — never floats
+- **UUID routing**: Public URLs use UUIDs, internal joins use bigint IDs
+- **HasUuid trait**: Auto-generates UUID on model creation, sets `getRouteKeyName` to `uuid`
+- **ForceJsonResponse middleware**: All requests get JSON responses, never HTML
+- **Rate limiting**: 60/min auth, 20/min public, 10/min chat
+- **PHPStan level 6** via Larastan
+- **Pint** for code style (ships with Laravel, PSR-12)
+- **Namespace**: Controllers at `App\Http\Controllers\Api\V1\*`
+- **Sanctum** for auth (token-based, `HasApiTokens` trait on User model)
+
+### TypeScript / Next.js (`web/`)
+- **Strict mode**: `strict: true`, `noUncheckedIndexedAccess: true`
+- **App Router** with route groups: `(auth)`, `(dashboard)`, `chat/[uuid]`
+- **API client**: `src/lib/api-client.ts` with typed envelope wrapper
+- **Types**: `src/types/models.ts` mirrors Laravel models/enums
+- **Import alias**: `@/*` maps to `./src/*`
+
+### Testing
+- **PHPUnit** for API tests (`sail test`)
+- Feature tests use `RefreshDatabase` trait
+- Auth tests cover: register, login, logout, me, update, validation, unauthorized
+
+### Docker
+- Root `docker-compose.yml` includes Sail via `include: [./api/compose.yaml]`
+- Sail services: laravel.test, pgsql, redis, mailpit
+- Next.js runs natively (`npm run dev` in `web/`)
+
+### CI/CD
+- `api.yml` — PHP 8.4, PostgreSQL service, Pint + PHPStan + PHPUnit (triggered by `api/**`)
+- `web.yml` — Node 22, TypeScript check + ESLint + build (triggered by `web/**`)
 
 ## Rules
 - **Business intelligence stays in memory/, never in git.** No business plans, competitive analysis, pricing strategy, or session logs in the repo.

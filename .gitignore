@@ -1,0 +1,38 @@
+# === Laravel (api/) ===
+/api/vendor
+/api/node_modules
+/api/public/hot
+/api/public/storage
+/api/storage/*.key
+/api/.env
+/api/.env.backup
+/api/.env.production
+/api/.phpunit.result.cache
+/api/Homestead.json
+/api/Homestead.yaml
+/api/auth.json
+/api/npm-debug.log
+/api/yarn-error.log
+
+# === Next.js (web/) ===
+/web/node_modules
+/web/.next
+/web/out
+/web/.env*.local
+/web/npm-debug.log*
+/web/yarn-debug.log*
+/web/yarn-error.log*
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Docker ===
+docker-compose.override.yml
