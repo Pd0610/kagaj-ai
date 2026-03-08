@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useSyncExternalStore, useState } from "react";
+import { useEffect, useSyncExternalStore, useState } from "react";
 import { api } from "@/lib/api-client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -45,8 +45,13 @@ export default function DashboardLayout({
     () => false,
   );
 
+  useEffect(() => {
+    if (!hasToken) {
+      router.replace("/login");
+    }
+  }, [hasToken, router]);
+
   if (!hasToken) {
-    router.replace("/login");
     return null;
   }
 
