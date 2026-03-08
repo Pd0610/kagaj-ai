@@ -3,9 +3,8 @@
 namespace App\Services;
 
 use App\Models\Template;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Process;
 
 class DocumentRenderer
 {
@@ -20,35 +19,26 @@ class DocumentRenderer
     }
 
     /**
-     * Generate a PDF from HTML and save to the given path.
-     * Uses DOMPDF directly with Mukta font registered on the same instance.
+     * Generate a PDF from HTML using Puppeteer + Chromium.
+     * This properly handles Devanagari conjuncts/ligatures unlike DOMPDF.
      */
     public function generatePdf(string $html, string $outputPath): void
     {
-        $options = new Options;
-        $options->setIsRemoteEnabled(true);
-        $options->setChroot(base_path());
+        $htmlPath = tempnam(sys_get_temp_dir(), 'kagaj_').'.html';
+        file_put_contents($htmlPath, $html);
 
-        $dompdf = new Dompdf($options);
+        try {
+            $scriptPath = base_path('scripts/html-to-pdf.mjs');
+            $result = Process::timeout(30)->run(
+                ['node', $scriptPath, $htmlPath, $outputPath]
+            );
 
-        // Register Mukta font on THIS instance so it's available during render
-        $fontMetrics = $dompdf->getFontMetrics();
-        if (! $fontMetrics->getFont('Mukta')) {
-            $fontMetrics->registerFont(
-                ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'normal'],
-                public_path('fonts/Mukta-Regular.ttf')
-            );
-            $fontMetrics->registerFont(
-                ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'bold'],
-                public_path('fonts/Mukta-Bold.ttf')
-            );
+            if ($result->failed()) {
+                throw new \RuntimeException('PDF generation failed: '.$result->errorOutput());
+            }
+        } finally {
+            @unlink($htmlPath);
         }
-
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('a4', 'portrait');
-        $dompdf->render();
-
-        file_put_contents($outputPath, $dompdf->output());
     }
 
     private function wrapInHtmlShell(string $body, string $title): string
@@ -61,10 +51,6 @@ class DocumentRenderer
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>{$title}</title>
             <style>
-                @page {
-                    margin: 15mm 18mm;
-                }
-
                 * {
                     margin: 0;
                     padding: 0;
