@@ -49,11 +49,18 @@ export interface TemplateSlot {
   required: boolean;
   fields?: TemplateSlot[];
   validation?: Record<string, unknown>;
+  group?: string;
+  display_order?: number;
+  default?: unknown;
+  ai_hint?: string;
+  min_items?: number;
+  max_items?: number;
 }
 
 export interface SlotGroup {
   key: string;
   label_en: string;
+  label_ne?: string;
   order: number;
 }
 
@@ -71,6 +78,8 @@ export interface Document {
   uuid: string;
   title: string;
   template_slug: string;
+  template_name?: string;
+  template_name_ne?: string;
   status: DocumentStatus;
   language: Language;
   is_watermarked: boolean;

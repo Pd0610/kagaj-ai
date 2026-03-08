@@ -39,12 +39,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('conversations/{conversation:uuid}/confirm', [ConversationController::class, 'confirm']);
 
     // Documents
-    Route::get('documents', [DocumentController::class, 'index']);
-    Route::get('documents/{document:uuid}', [DocumentController::class, 'show']);
-    Route::get('documents/{document:uuid}/preview', [DocumentController::class, 'preview']);
-    Route::get('documents/{document:uuid}/download', [DocumentController::class, 'download']);
-    Route::post('documents/{document:uuid}/regenerate', [DocumentController::class, 'regenerate']);
-    Route::delete('documents/{document:uuid}', [DocumentController::class, 'destroy']);
+    Route::post('documents', [DocumentController::class, 'store'])->name('documents.store');
+    Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::get('documents/{document:uuid}', [DocumentController::class, 'show'])->name('documents.show');
+    Route::get('documents/{document:uuid}/preview', [DocumentController::class, 'preview'])->name('documents.preview');
+    Route::get('documents/{document:uuid}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('documents/{document:uuid}', [DocumentController::class, 'destroy'])->name('documents.destroy');
 
     // Payments
     Route::post('payments/subscribe', [PaymentController::class, 'subscribe']);

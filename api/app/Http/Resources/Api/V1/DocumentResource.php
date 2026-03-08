@@ -13,10 +13,15 @@ class DocumentResource extends JsonResource
             'uuid' => $this->uuid,
             'title' => $this->title,
             'template_slug' => $this->template?->slug,
+            'template_name' => $this->template?->name_en,
+            'template_name_ne' => $this->template?->name_ne,
             'status' => $this->status,
             'language' => $this->language,
             'is_watermarked' => $this->is_watermarked,
-            'slot_data' => $this->when($request->routeIs('documents.show'), $this->slot_data),
+            'slot_data' => $this->when(
+                $request->routeIs('documents.show'),
+                $this->slot_data
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
