@@ -4,8 +4,79 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7cfbcf94c7ab9fe76b1ba006897676fe",
+    "content-hash": "4f8ee53549f41133ade23e891ce9b255",
     "packages": [
+        {
+            "name": "anuzpandey/laravel-nepali-date",
+            "version": "3.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/anuzpandey/laravel-nepali-date.git",
+                "reference": "5e6e1b1f6ead058886eab9fbd999ecea991935e9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/anuzpandey/laravel-nepali-date/zipball/5e6e1b1f6ead058886eab9fbd999ecea991935e9",
+                "reference": "5e6e1b1f6ead058886eab9fbd999ecea991935e9",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^11.0|^12.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.14.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^2.0 || ^3.0",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.8 || ^8.0",
+                "orchestra/testbench": "^9.0 || ^10.0",
+                "pestphp/pest": "^2.20 || ^3.8",
+                "pestphp/pest-plugin-arch": "^2.0 || ^3.0",
+                "pestphp/pest-plugin-laravel": "^2.0 || ^3.0",
+                "phpstan/phpstan": "^1.12.17 || ^2.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Anuzpandey\\LaravelNepaliDate\\LaravelNepaliDateServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/Helper/helper.php"
+                ],
+                "psr-4": {
+                    "Anuzpandey\\LaravelNepaliDate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "AnuzPandey",
+                    "email": "anuzbvbmaniac123@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A Laravel Package to convert English Date (A.D.) to Nepali Date (B.S.) and vice-versa.",
+            "homepage": "https://laravel-nepali-date.anuzpandey.com",
+            "keywords": [
+                "anuzpandey",
+                "laravel",
+                "laravel-nepali-date",
+                "nepali-date",
+                "nepali-date-converter"
+            ],
+            "support": {
+                "issues": "https://github.com/anuzpandey/laravel-nepali-date/issues",
+                "source": "https://github.com/anuzpandey/laravel-nepali-date/tree/3.2.0"
+            },
+            "time": "2026-02-09T13:28:29+00:00"
+        },
         {
             "name": "brick/math",
             "version": "0.14.8",

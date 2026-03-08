@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Anuzpandey\LaravelNepaliDate\LaravelNepaliDate;
 use App\Enums\DocumentStatus;
 use App\Enums\Language;
 use App\Http\Controllers\Controller;
@@ -152,7 +153,8 @@ class DocumentController extends Controller
     {
         foreach ($slotData as $key => $value) {
             if ($value === '$TODAY_BS') {
-                $slotData[$key] = now()->format('Y/m/d'); // TODO: convert to BS date
+                $slotData[$key] = LaravelNepaliDate::from(now()->format('Y-m-d'))
+                    ->toNepaliDate(format: 'Y/m/d', locale: 'np');
             }
         }
 

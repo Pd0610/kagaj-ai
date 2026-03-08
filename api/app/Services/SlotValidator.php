@@ -75,7 +75,7 @@ class SlotValidator
 
         foreach ($value as $index => $item) {
             if (! is_array($item)) {
-                $errors["{$key}.{$index}"][] = "Item must be an object.";
+                $errors["{$key}.{$index}"][] = 'Item must be an object.';
 
                 continue;
             }
