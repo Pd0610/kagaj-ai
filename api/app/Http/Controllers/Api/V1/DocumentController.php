@@ -25,10 +25,15 @@ class DocumentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $documents = Document::where('user_id', $request->user()->id)
+        $query = Document::where('user_id', $request->user()->id)
             ->with('template:id,slug,name_en,name_ne,category')
-            ->latest()
-            ->paginate(min((int) $request->input('per_page', 20), 50));
+            ->latest();
+
+        if ($slug = $request->input('template_slug')) {
+            $query->whereHas('template', fn ($q) => $q->where('slug', $slug));
+        }
+
+        $documents = $query->paginate(min((int) $request->input('per_page', 20), 50));
 
         return $this->paginated(DocumentResource::collection($documents));
     }

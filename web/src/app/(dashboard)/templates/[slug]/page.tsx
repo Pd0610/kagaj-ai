@@ -20,7 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2Icon, MinusIcon, PlusIcon } from "lucide-react";
+import {
+  ClipboardCopyIcon,
+  Loader2Icon,
+  MinusIcon,
+  PlusIcon,
+} from "lucide-react";
 import { NepaliInput } from "@/components/nepali-input";
 
 type SlotData = Record<string, unknown>;
@@ -33,6 +38,8 @@ export default function TemplateFormPage() {
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [previousDocs, setPreviousDocs] = useState<DocType[]>([]);
+  const [loadingPrefill, setLoadingPrefill] = useState(false);
 
   useEffect(() => {
     api
@@ -44,7 +51,30 @@ export default function TemplateFormPage() {
         }
       })
       .finally(() => setLoading(false));
+
+    // Fetch previous documents for this template
+    api
+      .get<DocType[]>(`/documents?template_slug=${slug}&per_page=5`)
+      .then((res) => setPreviousDocs(res.data))
+      .catch(() => {});
   }, [slug]);
+
+  const handlePrefill = useCallback(
+    async (docUuid: string) => {
+      setLoadingPrefill(true);
+      try {
+        const res = await api.get<DocType>(`/documents/${docUuid}`);
+        if (res.data.slot_data) {
+          setFormData(res.data.slot_data);
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setLoadingPrefill(false);
+      }
+    },
+    [],
+  );
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -106,6 +136,39 @@ export default function TemplateFormPage() {
           </p>
         )}
       </div>
+
+      {previousDocs.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardCopyIcon className="size-4" />
+              Pre-fill from previous document
+            </CardTitle>
+            <CardDescription>
+              Select a previous document to fill the form with its data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {previousDocs.map((doc) => (
+                <Button
+                  key={doc.uuid}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loadingPrefill}
+                  onClick={() => handlePrefill(doc.uuid)}
+                >
+                  {doc.title}
+                  <span className="ml-1 text-muted-foreground">
+                    {new Date(doc.created_at).toLocaleDateString()}
+                  </span>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {errors._general && (
         <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

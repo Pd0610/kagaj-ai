@@ -15,6 +15,8 @@ interface NepaliInputProps {
 interface Suggestion {
   word: string;
   options: string[];
+  top: number;
+  left: number;
 }
 
 async function fetchSuggestions(word: string): Promise<string[]> {
@@ -50,15 +52,20 @@ export function NepaliInput({
       ? "flex min-h-[80px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive"
       : "flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive");
 
-  // Extract the last word being typed (not yet committed with space)
   const getLastWord = useCallback((text: string) => {
     const parts = text.split(/\s/);
     return parts[parts.length - 1] ?? "";
   }, []);
 
+  const getInputPosition = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return { top: 0, left: 0 };
+    const rect = el.getBoundingClientRect();
+    return { top: rect.bottom + 4, left: rect.left };
+  }, []);
+
   const commitSuggestion = useCallback(
     (selected: string) => {
-      // Replace the last word with the selected suggestion
       const parts = value.split(/\s/);
       parts[parts.length - 1] = selected;
       const newValue = parts.join(" ");
@@ -76,13 +83,13 @@ export function NepaliInput({
 
       const lastWord = getLastWord(newValue);
 
-      // Only fetch for romanized input (ASCII letters)
       if (lastWord && /^[a-zA-Z]+$/.test(lastWord)) {
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(async () => {
           const options = await fetchSuggestions(lastWord);
           if (options.length > 0) {
-            setSuggestion({ word: lastWord, options });
+            const pos = getInputPosition();
+            setSuggestion({ word: lastWord, options, ...pos });
             setActiveIndex(0);
           } else {
             setSuggestion(null);
@@ -92,7 +99,7 @@ export function NepaliInput({
         setSuggestion(null);
       }
     },
-    [onChange, getLastWord],
+    [onChange, getLastWord, getInputPosition],
   );
 
   const handleKeyDown = useCallback(
@@ -113,7 +120,6 @@ export function NepaliInput({
       } else if (e.key === "Escape") {
         setSuggestion(null);
       } else if (e.key === " ") {
-        // Space commits the first suggestion
         if (suggestion.options.length > 0) {
           e.preventDefault();
           commitSuggestion(
@@ -125,7 +131,6 @@ export function NepaliInput({
     [suggestion, activeIndex, commitSuggestion],
   );
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -169,10 +174,7 @@ export function NepaliInput({
         <ul
           className="fixed z-[9999] max-h-60 w-auto min-w-[180px] overflow-auto rounded-md border bg-white py-1 shadow-lg"
           role="listbox"
-          style={{
-            top: (inputRef.current?.getBoundingClientRect().bottom ?? 0) + 4,
-            left: inputRef.current?.getBoundingClientRect().left ?? 0,
-          }}
+          style={{ top: suggestion.top, left: suggestion.left }}
         >
           {suggestion.options.map((option, index) => (
             <li
