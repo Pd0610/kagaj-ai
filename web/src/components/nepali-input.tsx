@@ -1,6 +1,6 @@
 "use client";
 
-import { IndicTransliterate } from "@ai4bharat/indic-transliterate";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface NepaliInputProps {
   value: string;
@@ -12,6 +12,23 @@ interface NepaliInputProps {
   "aria-invalid"?: boolean;
 }
 
+interface Suggestion {
+  word: string;
+  options: string[];
+}
+
+async function fetchSuggestions(word: string): Promise<string[]> {
+  if (!word || word.length < 1) return [];
+  try {
+    const res = await fetch(
+      `/api/transliterate?text=${encodeURIComponent(word)}`,
+    );
+    return (await res.json()) as string[];
+  } catch {
+    return [];
+  }
+}
+
 export function NepaliInput({
   value,
   onChange,
@@ -21,38 +38,163 @@ export function NepaliInput({
   className,
   "aria-invalid": ariaInvalid,
 }: NepaliInputProps) {
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   const inputClassName =
     className ??
     (multiline
       ? "flex min-h-[80px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive"
       : "flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive");
 
-  return (
-    <IndicTransliterate
-      value={value}
-      onChangeText={onChange}
-      lang="ne"
-      maxOptions={5}
-      showCurrentWordAsLastSuggestion
-      renderComponent={(props) =>
-        multiline ? (
-          <textarea
-            {...props}
-            rows={rows}
-            className={inputClassName}
-            placeholder={placeholder}
-            aria-invalid={ariaInvalid}
-          />
-        ) : (
-          <input
-            {...props}
-            type="text"
-            className={inputClassName}
-            placeholder={placeholder}
-            aria-invalid={ariaInvalid}
-          />
-        )
+  // Extract the last word being typed (not yet committed with space)
+  const getLastWord = useCallback((text: string) => {
+    const parts = text.split(/\s/);
+    return parts[parts.length - 1] ?? "";
+  }, []);
+
+  const commitSuggestion = useCallback(
+    (selected: string) => {
+      // Replace the last word with the selected suggestion
+      const parts = value.split(/\s/);
+      parts[parts.length - 1] = selected;
+      const newValue = parts.join(" ");
+      onChange(newValue);
+      setSuggestion(null);
+      setActiveIndex(0);
+    },
+    [value, onChange],
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      onChange(newValue);
+
+      const lastWord = getLastWord(newValue);
+
+      // Only fetch for romanized input (ASCII letters)
+      if (lastWord && /^[a-zA-Z]+$/.test(lastWord)) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(async () => {
+          const options = await fetchSuggestions(lastWord);
+          if (options.length > 0) {
+            setSuggestion({ word: lastWord, options });
+            setActiveIndex(0);
+          } else {
+            setSuggestion(null);
+          }
+        }, 150);
+      } else {
+        setSuggestion(null);
       }
-    />
+    },
+    [onChange, getLastWord],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!suggestion) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex((i) => Math.min(i + 1, suggestion.options.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === "Enter" || e.key === "Tab") {
+        if (suggestion.options.length > 0) {
+          e.preventDefault();
+          commitSuggestion(suggestion.options[activeIndex] ?? suggestion.options[0]!);
+        }
+      } else if (e.key === "Escape") {
+        setSuggestion(null);
+      } else if (e.key === " ") {
+        // Space commits the first suggestion
+        if (suggestion.options.length > 0) {
+          e.preventDefault();
+          commitSuggestion(
+            (suggestion.options[activeIndex] ?? suggestion.options[0]!) + " ",
+          );
+        }
+      }
+    },
+    [suggestion, activeIndex, commitSuggestion],
+  );
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setSuggestion(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      {multiline ? (
+        <textarea
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          rows={rows}
+          className={inputClassName}
+          placeholder={placeholder}
+          aria-invalid={ariaInvalid}
+        />
+      ) : (
+        <input
+          ref={inputRef as React.RefObject<HTMLInputElement>}
+          type="text"
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          className={inputClassName}
+          placeholder={placeholder}
+          aria-invalid={ariaInvalid}
+        />
+      )}
+
+      {suggestion && suggestion.options.length > 0 && (
+        <ul
+          className="fixed z-[9999] max-h-60 w-auto min-w-[180px] overflow-auto rounded-md border bg-white py-1 shadow-lg"
+          role="listbox"
+          style={{
+            top: (inputRef.current?.getBoundingClientRect().bottom ?? 0) + 4,
+            left: inputRef.current?.getBoundingClientRect().left ?? 0,
+          }}
+        >
+          {suggestion.options.map((option, index) => (
+            <li
+              key={option}
+              role="option"
+              aria-selected={index === activeIndex}
+              className={`cursor-pointer px-3 py-1.5 text-sm ${
+                index === activeIndex
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                commitSuggestion(option);
+              }}
+              onMouseEnter={() => setActiveIndex(index)}
+            >
+              {option}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
