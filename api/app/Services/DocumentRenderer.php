@@ -58,6 +58,9 @@ class DocumentRenderer
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>{$title}</title>
             <style>
+                @page {
+                    margin: 15mm 18mm;
+                }
 
                 * {
                     margin: 0;
@@ -67,10 +70,9 @@ class DocumentRenderer
 
                 body {
                     font-family: 'Mukta', 'Noto Sans Devanagari', sans-serif;
-                    font-size: 12pt;
-                    line-height: 1.6;
+                    font-size: 11pt;
+                    line-height: 1.5;
                     color: #000;
-                    padding: 20mm;
                 }
 
                 .document {
@@ -79,7 +81,7 @@ class DocumentRenderer
                 }
 
                 .page {
-                    margin-bottom: 2em;
+                    margin-bottom: 1em;
                 }
 
                 h1, h2, h3, h4 {
@@ -88,25 +90,25 @@ class DocumentRenderer
                     margin-bottom: 0.5em;
                 }
 
-                h2 { font-size: 16pt; text-align: center; }
-                h3 { font-size: 14pt; text-align: center; }
+                h2 { font-size: 14pt; text-align: center; }
+                h3 { font-size: 12pt; text-align: center; }
 
-                p { margin-bottom: 0.8em; text-align: justify; }
+                p { margin-bottom: 0.6em; text-align: justify; }
 
-                .letterhead { text-align: center; margin-bottom: 2em; }
-                .date { text-align: right; margin-bottom: 1.5em; }
-                .addressee { margin-bottom: 1.5em; }
-                .subject { margin-bottom: 1em; }
+                .letterhead { text-align: center; margin-bottom: 1.2em; }
+                .date { text-align: right; margin-bottom: 1em; }
+                .addressee { margin-bottom: 1em; }
+                .subject { margin-bottom: 0.8em; }
 
                 .signature-block {
-                    margin-top: 3em;
+                    margin-top: 2em;
                     text-align: right;
                 }
                 .signature-block .name { font-weight: 700; }
 
                 .resolution-header {
                     text-align: center;
-                    margin-bottom: 2em;
+                    margin-bottom: 1.2em;
                 }
 
                 .attendee-table {
@@ -136,7 +138,7 @@ class DocumentRenderer
                 }
 
                 .quorum, .agenda, .decisions, .attendees {
-                    margin: 1.5em 0;
+                    margin: 1em 0;
                 }
 
                 ol { padding-left: 2em; }
