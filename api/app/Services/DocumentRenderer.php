@@ -3,15 +3,46 @@
 namespace App\Services;
 
 use App\Models\Template;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\Blade;
 
 class DocumentRenderer
 {
     /**
+     * Ensure Mukta font is registered in DOMPDF's font cache.
+     * This is idempotent — DOMPDF skips if already cached.
+     */
+    public function ensureFontsRegistered(): void
+    {
+        $options = new Options;
+        $options->setIsRemoteEnabled(true);
+        $options->setChroot(base_path());
+        $dompdf = new Dompdf($options);
+        $fontMetrics = $dompdf->getFontMetrics();
+
+        if ($fontMetrics->getFont('Mukta')) {
+            return;
+        }
+
+        $fontMetrics->registerFont(
+            ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'normal'],
+            public_path('fonts/Mukta-Regular.ttf')
+        );
+
+        $fontMetrics->registerFont(
+            ['family' => 'Mukta', 'style' => 'normal', 'weight' => 'bold'],
+            public_path('fonts/Mukta-Bold.ttf')
+        );
+    }
+
+    /**
      * Render a template's html_body with slot data, wrapped in a base HTML shell.
      */
     public function render(Template $template, array $slotData): string
     {
+        $this->ensureFontsRegistered();
+
         $body = Blade::render($template->html_body, $slotData);
 
         return $this->wrapInHtmlShell($body, $template->name_ne ?: $template->name_en);
@@ -19,9 +50,6 @@ class DocumentRenderer
 
     private function wrapInHtmlShell(string $body, string $title): string
     {
-        $fontPath = public_path('fonts/Mukta-Regular.ttf');
-        $fontBoldPath = public_path('fonts/Mukta-Bold.ttf');
-
         return <<<HTML
         <!DOCTYPE html>
         <html lang="ne">
@@ -30,18 +58,6 @@ class DocumentRenderer
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>{$title}</title>
             <style>
-                @font-face {
-                    font-family: 'Mukta';
-                    src: url('{$fontPath}') format('truetype');
-                    font-weight: 400;
-                    font-style: normal;
-                }
-                @font-face {
-                    font-family: 'Mukta';
-                    src: url('{$fontBoldPath}') format('truetype');
-                    font-weight: 700;
-                    font-style: normal;
-                }
 
                 * {
                     margin: 0;
