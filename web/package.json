@@ -20,7 +20,6 @@
     "puppeteer-core": "^24.39.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-transliterate": "^1.1.9",
     "shadcn": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
