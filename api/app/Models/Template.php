@@ -20,6 +20,7 @@ class Template extends Model
         'description_ne',
         'schema',
         'html_body',
+        'pdf_config',
         'version',
         'is_published',
         'price',
@@ -30,6 +31,7 @@ class Template extends Model
     {
         return [
             'schema' => 'json',
+            'pdf_config' => 'json',
             'is_published' => 'boolean',
             'version' => 'integer',
             'price' => 'integer',

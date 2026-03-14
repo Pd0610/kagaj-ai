@@ -74,6 +74,12 @@ export interface ComputedSlot {
   formula: string;
 }
 
+export interface PdfConfig {
+  margins: { top: number; right: number; bottom: number; left: number };
+  page_size: "A4" | "Legal" | "Letter";
+  default_font: string;
+}
+
 export interface Document {
   uuid: string;
   title: string;
@@ -84,9 +90,111 @@ export interface Document {
   language: Language;
   is_watermarked: boolean;
   slot_data?: Record<string, unknown>;
+  pdf_config?: PdfConfig | null;
   created_at: string;
   updated_at: string;
 }
+
+export type CompanyType =
+  | "pvt_ltd"
+  | "public_ltd"
+  | "partnership"
+  | "sole_prop"
+  | "ngo"
+  | "cooperative";
+
+export type MemberRole =
+  | "director"
+  | "shareholder"
+  | "secretary"
+  | "auditor"
+  | "partner"
+  | "proprietor";
+
+export interface Company {
+  uuid: string;
+  name_en: string;
+  name_ne: string | null;
+  registration_number: string | null;
+  pan_number: string | null;
+  vat_number: string | null;
+  company_type: CompanyType;
+  incorporation_date: string | null;
+  district_en: string | null;
+  district_ne: string | null;
+  municipality_en: string | null;
+  municipality_ne: string | null;
+  ward: string | null;
+  tole_en: string | null;
+  tole_ne: string | null;
+  authorized_capital: number | null;
+  paid_up_capital: number | null;
+  share_value: number | null;
+  total_shares: number | null;
+  fiscal_year_start: string | null;
+  fiscal_year_end: string | null;
+  sector: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  bank_branch: string | null;
+  auditor_name: string | null;
+  auditor_firm: string | null;
+  auditor_ican_number: string | null;
+  members?: CompanyMember[];
+  documents_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CompanyMember {
+  uuid: string;
+  role: MemberRole;
+  name_en: string;
+  name_ne: string | null;
+  father_name_en: string | null;
+  father_name_ne: string | null;
+  grandfather_name_en: string | null;
+  grandfather_name_ne: string | null;
+  citizenship_number: string | null;
+  citizenship_issued_district: string | null;
+  citizenship_issued_date: string | null;
+  district_en: string | null;
+  district_ne: string | null;
+  municipality_en: string | null;
+  municipality_ne: string | null;
+  ward: string | null;
+  phone: string | null;
+  email: string | null;
+  share_count: number | null;
+  share_percentage: number | null;
+  appointment_date: string | null;
+  resignation_date: string | null;
+  is_chairperson: boolean;
+  is_managing_director: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const COMPANY_TYPE_LABELS: Record<CompanyType, string> = {
+  pvt_ltd: "Private Limited",
+  public_ltd: "Public Limited",
+  partnership: "Partnership",
+  sole_prop: "Sole Proprietorship",
+  ngo: "NGO",
+  cooperative: "Cooperative",
+};
+
+export const MEMBER_ROLE_LABELS: Record<MemberRole, string> = {
+  director: "Director",
+  shareholder: "Shareholder",
+  secretary: "Secretary",
+  auditor: "Auditor",
+  partner: "Partner",
+  proprietor: "Proprietor",
+};
 
 export interface Conversation {
   uuid: string;

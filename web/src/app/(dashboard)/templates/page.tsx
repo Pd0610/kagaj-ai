@@ -7,9 +7,9 @@ export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Templates</h1>
-        <p className="text-muted-foreground">
-          Choose a document template to get started.
+        <h1>Templates</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Choose a document template to generate
         </p>
       </div>
       <Suspense

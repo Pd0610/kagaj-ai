@@ -22,8 +22,8 @@ class TemplateController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name_en', 'ilike', "%{$search}%")
-                  ->orWhere('name_ne', 'like', "%{$search}%")
-                  ->orWhere('description_en', 'ilike', "%{$search}%");
+                    ->orWhere('name_ne', 'like', "%{$search}%")
+                    ->orWhere('description_en', 'ilike', "%{$search}%");
             });
         }
 

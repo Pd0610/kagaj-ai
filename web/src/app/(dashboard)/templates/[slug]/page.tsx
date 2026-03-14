@@ -8,6 +8,7 @@ import type {
   TemplateSlot,
   SlotGroup,
   Document as DocType,
+  Company,
 } from "@/types/models";
 import {
   Card,
@@ -21,6 +22,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BuildingIcon,
   ClipboardCopyIcon,
   Loader2Icon,
   MinusIcon,
@@ -40,6 +49,8 @@ export default function TemplateFormPage() {
   const [loading, setLoading] = useState(true);
   const [previousDocs, setPreviousDocs] = useState<DocType[]>([]);
   const [loadingPrefill, setLoadingPrefill] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedCompanyUuid, setSelectedCompanyUuid] = useState<string>("");
 
   useEffect(() => {
     api
@@ -57,7 +68,47 @@ export default function TemplateFormPage() {
       .get<DocType[]>(`/documents?template_slug=${slug}&per_page=5`)
       .then((res) => setPreviousDocs(res.data))
       .catch(() => {});
+
+    // Fetch user's companies for prefill
+    api
+      .get<Company[]>("/companies")
+      .then((res) => setCompanies(res.data))
+      .catch(() => {});
   }, [slug]);
+
+  const handleCompanySelect = useCallback(
+    async (companyUuid: string) => {
+      setSelectedCompanyUuid(companyUuid);
+      if (!companyUuid) return;
+
+      setLoadingPrefill(true);
+      try {
+        const res = await api.get<Record<string, unknown>>(
+          `/companies/${companyUuid}/prefill`,
+        );
+        // Merge company data into form, preserving any user-edited fields
+        setFormData((prev) => {
+          const merged = { ...prev };
+          for (const [key, value] of Object.entries(res.data)) {
+            // Only fill empty fields from company data
+            if (
+              merged[key] === "" ||
+              merged[key] === undefined ||
+              merged[key] === null
+            ) {
+              merged[key] = value;
+            }
+          }
+          return merged;
+        });
+      } catch {
+        // silently fail
+      } finally {
+        setLoadingPrefill(false);
+      }
+    },
+    [],
+  );
 
   const handlePrefill = useCallback(
     async (docUuid: string) => {
@@ -89,6 +140,7 @@ export default function TemplateFormPage() {
           template_slug: template.slug,
           slot_data: formData,
           language: "ne",
+          ...(selectedCompanyUuid ? { company_uuid: selectedCompanyUuid } : {}),
         });
         router.push(`/documents/${res.data.uuid}`);
       } catch (err) {
@@ -136,6 +188,44 @@ export default function TemplateFormPage() {
           </p>
         )}
       </div>
+
+      {companies.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BuildingIcon className="size-4" />
+              Auto-fill from company
+            </CardTitle>
+            <CardDescription>
+              Select a company to pre-fill its details into the form
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select
+              value={selectedCompanyUuid}
+              onValueChange={(val) => { if (val) handleCompanySelect(val); }}
+            >
+              <SelectTrigger className="w-full sm:w-80">
+                <SelectValue placeholder="Select a company..." />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((c) => (
+                  <SelectItem key={c.uuid} value={c.uuid}>
+                    {c.name_en}
+                    {c.name_ne ? ` (${c.name_ne})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {loadingPrefill && (
+              <p className="mt-2 flex items-center text-sm text-muted-foreground">
+                <Loader2Icon className="mr-1 size-3 animate-spin" />
+                Loading company data...
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {previousDocs.length > 0 && (
         <Card>

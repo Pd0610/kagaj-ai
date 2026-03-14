@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type PaginatedEnvelope } from "@/lib/api-client";
 import type { Template } from "@/types/models";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { FileTextIcon, SearchIcon } from "lucide-react";
 
 interface Category {
@@ -63,7 +56,8 @@ export function TemplatesContent() {
   }, [activeCategory, search]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Search */}
       <div className="relative max-w-md">
         <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -71,63 +65,83 @@ export function TemplatesContent() {
           placeholder="Search templates..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="pl-9 h-10"
         />
       </div>
 
+      {/* Category pills */}
       <div className="flex flex-wrap gap-2">
-        <Badge
-          variant={activeCategory === null ? "default" : "secondary"}
-          className="cursor-pointer"
+        <button
           onClick={() => setActiveCategory(null)}
+          className={`category-pill ${
+            activeCategory === null
+              ? "category-pill-active"
+              : "category-pill-inactive"
+          }`}
         >
           All
-        </Badge>
+        </button>
         {categories.map((cat) => (
-          <Badge
+          <button
             key={cat.slug}
-            variant={activeCategory === cat.slug ? "default" : "secondary"}
-            className="cursor-pointer"
             onClick={() => setActiveCategory(cat.slug)}
+            className={`category-pill ${
+              activeCategory === cat.slug
+                ? "category-pill-active"
+                : "category-pill-inactive"
+            }`}
           >
             {cat.name} ({cat.templates_count})
-          </Badge>
+          </button>
         ))}
       </div>
 
+      {/* Template grid */}
       {templates.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-muted-foreground">
-          <FileTextIcon className="mb-2 size-8" />
-          <p>No templates found.</p>
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-muted-foreground">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-muted mb-3">
+            <FileTextIcon className="size-6" />
+          </div>
+          <p className="font-medium">No templates found</p>
+          <p className="text-sm mt-1">Try adjusting your search or filter</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((t) => (
             <Link key={t.slug} href={`/templates/${t.slug}`}>
-              <Card className="h-full transition-colors hover:bg-muted/50">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{t.category}</Badge>
-                    {t.is_free_eligible && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      >
-                        Free
-                      </Badge>
-                    )}
-                  </div>
-                  <CardTitle>{t.name}</CardTitle>
-                  <CardDescription>{t.name_ne}</CardDescription>
-                </CardHeader>
-                {t.description && (
-                  <CardContent>
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {t.description}
-                    </p>
-                  </CardContent>
+              <div className="card-hover rounded-xl p-5 h-full flex flex-col">
+                {/* Badges row */}
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge variant="outline" className="text-xs">
+                    {t.category}
+                  </Badge>
+                  {t.is_free_eligible && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-accent text-accent-foreground border-0"
+                    >
+                      Free
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Title & Nepali name */}
+                <p className="font-semibold text-sm leading-snug">
+                  {t.name}
+                </p>
+                {t.name_ne && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t.name_ne}
+                  </p>
                 )}
-              </Card>
+
+                {/* Description */}
+                {t.description && (
+                  <p className="line-clamp-2 text-xs text-muted-foreground mt-3 flex-1">
+                    {t.description}
+                  </p>
+                )}
+              </div>
             </Link>
           ))}
         </div>

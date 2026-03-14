@@ -43,6 +43,11 @@ class User extends Authenticatable
 
     // Relationships
 
+    public function companies(): HasMany
+    {
+        return $this->hasMany(Company::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);

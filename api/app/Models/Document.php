@@ -19,6 +19,7 @@ class Document extends Model
     protected $fillable = [
         'uuid',
         'user_id',
+        'company_id',
         'template_id',
         'template_version',
         'title',
@@ -50,6 +51,11 @@ class Document extends Model
     public function template(): BelongsTo
     {
         return $this->belongsTo(Template::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function conversation(): HasOne

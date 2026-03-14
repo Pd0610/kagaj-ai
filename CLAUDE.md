@@ -55,6 +55,8 @@ Surya has context between sessions. Jarvis doesn't. Session files ARE Jarvis's m
 ### TypeScript / Next.js (`web/`)
 - **Strict mode**: `strict: true`, `noUncheckedIndexedAccess: true`
 - **App Router** with route groups: `(auth)`, `(dashboard)`, `chat/[uuid]`
+- **Dashboard layout**: Collapsible sidebar (shadcn `SidebarProvider`), not top-nav
+- **Color system**: Hue-variable-based — change 3 CSS vars to re-theme (see `web/CLAUDE.md`)
 - **API client**: `src/lib/api-client.ts` with typed envelope wrapper
 - **Types**: `src/types/models.ts` mirrors Laravel models/enums
 - **Import alias**: `@/*` maps to `./src/*`

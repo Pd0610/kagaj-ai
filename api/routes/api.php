@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -37,6 +38,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('conversations/{conversation:uuid}/messages', [ConversationController::class, 'sendMessage'])
         ->middleware('throttle:chat');
     Route::post('conversations/{conversation:uuid}/confirm', [ConversationController::class, 'confirm']);
+
+    // Companies
+    Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+    Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+    Route::get('companies/{company:uuid}', [CompanyController::class, 'show'])->name('companies.show');
+    Route::put('companies/{company:uuid}', [CompanyController::class, 'update'])->name('companies.update');
+    Route::delete('companies/{company:uuid}', [CompanyController::class, 'destroy'])->name('companies.destroy');
+    Route::get('companies/{company:uuid}/prefill', [CompanyController::class, 'prefill'])->name('companies.prefill');
+
+    // Company Members
+    Route::post('companies/{company:uuid}/members', [CompanyController::class, 'storeMembers'])->name('companies.members.store');
+    Route::put('companies/{company:uuid}/members/{member:uuid}', [CompanyController::class, 'updateMember'])->name('companies.members.update');
+    Route::delete('companies/{company:uuid}/members/{member:uuid}', [CompanyController::class, 'destroyMember'])->name('companies.members.destroy');
 
     // Documents
     Route::post('documents', [DocumentController::class, 'store'])->name('documents.store');

@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Template;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Process;
+use Mpdf\Mpdf;
 
 class DocumentRenderer
 {
@@ -19,26 +19,43 @@ class DocumentRenderer
     }
 
     /**
-     * Generate a PDF from HTML using Puppeteer + Chromium.
-     * This properly handles Devanagari conjuncts/ligatures unlike DOMPDF.
+     * Generate a PDF from HTML using mPDF.
+     * Pure PHP — no external binaries. Handles Devanagari conjuncts/ligatures.
      */
     public function generatePdf(string $html, string $outputPath): void
     {
-        $htmlPath = tempnam(sys_get_temp_dir(), 'kagaj_').'.html';
-        file_put_contents($htmlPath, $html);
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables)->getDefaults();
+        $defaultFontDirs = $defaultConfig['fontDir'];
 
-        try {
-            $scriptPath = base_path('scripts/html-to-pdf.mjs');
-            $result = Process::timeout(30)->run(
-                ['node', $scriptPath, $htmlPath, $outputPath]
-            );
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables)->getDefaults();
+        $defaultFontData = $defaultFontConfig['fontdata'];
 
-            if ($result->failed()) {
-                throw new \RuntimeException('PDF generation failed: '.$result->errorOutput());
-            }
-        } finally {
-            @unlink($htmlPath);
-        }
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'margin_top' => 15,
+            'margin_right' => 18,
+            'margin_bottom' => 15,
+            'margin_left' => 18,
+            'default_font' => 'mukta',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+            'tempDir' => sys_get_temp_dir().'/mpdf',
+            'fontDir' => array_merge($defaultFontDirs, [
+                storage_path('fonts'),
+            ]),
+            'fontdata' => $defaultFontData + [
+                'mukta' => [
+                    'R' => 'Mukta-Regular.ttf',
+                    'B' => 'Mukta-Bold.ttf',
+                    'useOTL' => 0xFF,
+                    'useKashida' => 75,
+                ],
+            ],
+        ]);
+
+        $mpdf->WriteHTML($html);
+        $mpdf->Output($outputPath, \Mpdf\Output\Destination::FILE);
     }
 
     private function wrapInHtmlShell(string $body, string $title): string
@@ -49,6 +66,9 @@ class DocumentRenderer
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;700&display=swap" rel="stylesheet">
             <title>{$title}</title>
             <style>
                 * {
@@ -58,7 +78,7 @@ class DocumentRenderer
                 }
 
                 body {
-                    font-family: 'Mukta', 'Noto Sans Devanagari', sans-serif;
+                    font-family: 'Mukta', sans-serif;
                     font-size: 11pt;
                     line-height: 1.5;
                     color: #000;

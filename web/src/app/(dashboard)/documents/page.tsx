@@ -66,9 +66,9 @@ export default function DocumentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Documents</h1>
-          <p className="text-muted-foreground">
-            Documents you&apos;ve generated.
+          <h1>My Documents</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Documents you&apos;ve generated
           </p>
         </div>
         <Link href="/templates" className={cn(buttonVariants())}>
@@ -78,9 +78,11 @@ export default function DocumentsPage() {
       </div>
 
       {documents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-          <FileTextIcon className="mb-3 size-10 text-muted-foreground" />
-          <p className="text-muted-foreground">No documents yet.</p>
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/20 bg-primary/[0.02] py-16">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+            <FileTextIcon className="size-7 text-primary" />
+          </div>
+          <p className="font-medium">No documents yet</p>
           <Link
             href="/templates"
             className={cn(buttonVariants({ variant: "link" }), "mt-1")}
@@ -89,7 +91,7 @@ export default function DocumentsPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

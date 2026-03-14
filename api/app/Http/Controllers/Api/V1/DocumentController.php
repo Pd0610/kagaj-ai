@@ -7,6 +7,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\Language;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\DocumentResource;
+use App\Models\Company;
 use App\Models\Document;
 use App\Models\Template;
 use App\Services\DocumentRenderer;
@@ -26,7 +27,7 @@ class DocumentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Document::where('user_id', $request->user()->id)
-            ->with('template:id,slug,name_en,name_ne,category')
+            ->with('template:id,slug,name_en,name_ne,category,pdf_config')
             ->latest();
 
         if ($slug = $request->input('template_slug')) {
@@ -44,13 +45,28 @@ class DocumentController extends Controller
             'template_slug' => 'required|string|exists:templates,slug',
             'slot_data' => 'required|array',
             'language' => 'sometimes|string|in:en,ne',
+            'company_uuid' => 'nullable|string|exists:companies,uuid',
         ]);
 
         $template = Template::where('slug', $request->input('template_slug'))
             ->published()
             ->firstOrFail();
 
-        $slotData = $this->resolveSlotDefaults($request->input('slot_data'));
+        // Resolve company and merge pre-filled data with user-provided overrides
+        $companyId = null;
+        $slotData = $request->input('slot_data');
+
+        if ($companyUuid = $request->input('company_uuid')) {
+            $company = Company::where('uuid', $companyUuid)
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
+
+            $companyId = $company->id;
+            // Company data as base, user slot_data overrides
+            $slotData = array_merge($company->toSlotData(), $slotData);
+        }
+
+        $slotData = $this->resolveSlotDefaults($slotData);
         $errors = $this->slotValidator->validate($template, $slotData);
 
         if (! empty($errors)) {
@@ -61,36 +77,17 @@ class DocumentController extends Controller
 
         $document = Document::create([
             'user_id' => $request->user()->id,
+            'company_id' => $companyId,
             'template_id' => $template->id,
             'template_version' => $template->version,
             'title' => $template->name_ne ?: $template->name_en,
-            'status' => DocumentStatus::Draft,
+            'status' => DocumentStatus::Completed,
             'slot_data' => $slotData,
             'language' => $language,
             'is_watermarked' => false,
         ]);
 
-        try {
-            $html = $this->renderer->render($template, $slotData);
-
-            $pdfDir = 'documents';
-            Storage::disk('local')->makeDirectory($pdfDir);
-            $pdfPath = "{$pdfDir}/{$document->uuid}.pdf";
-            $fullPath = Storage::disk('local')->path($pdfPath);
-
-            $this->renderer->generatePdf($html, $fullPath);
-
-            $document->update([
-                'status' => DocumentStatus::Completed,
-                'pdf_path' => $pdfPath,
-            ]);
-        } catch (\Throwable $e) {
-            $document->update(['status' => DocumentStatus::Failed]);
-
-            return $this->error('PDF generation failed: '.$e->getMessage(), 500);
-        }
-
-        $document->load('template:id,slug,name_en,name_ne,category');
+        $document->load('template:id,slug,name_en,name_ne,category,pdf_config');
 
         return $this->created(new DocumentResource($document));
     }
@@ -101,7 +98,7 @@ class DocumentController extends Controller
             return $this->forbidden();
         }
 
-        $document->load('template:id,slug,name_en,name_ne,category');
+        $document->load('template:id,slug,name_en,name_ne,category,pdf_config');
 
         return $this->success(new DocumentResource($document));
     }
@@ -122,7 +119,10 @@ class DocumentController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => ['html' => $html],
+            'data' => [
+                'html' => $html,
+                'pdf_config' => $template->pdf_config,
+            ],
             'message' => null,
             'errors' => null,
         ]);
@@ -134,17 +134,28 @@ class DocumentController extends Controller
             return $this->forbidden();
         }
 
-        if (! $document->pdf_path || ! Storage::disk('local')->exists($document->pdf_path)) {
-            return $this->error('PDF not found', 404);
+        $template = $document->template;
+
+        if (! $template) {
+            return $this->error('Template not found', 404);
         }
 
-        $filename = str_replace(' ', '-', $document->title).'-'.$document->uuid.'.pdf';
+        try {
+            $html = $this->renderer->render($template, $document->slot_data ?? []);
+            $tmpPath = sys_get_temp_dir()."/documents/{$document->uuid}.pdf";
 
-        return response()->download(
-            Storage::disk('local')->path($document->pdf_path),
-            $filename,
-            ['Content-Type' => 'application/pdf']
-        );
+            if (! is_dir(dirname($tmpPath))) {
+                mkdir(dirname($tmpPath), 0755, true);
+            }
+
+            $this->renderer->generatePdf($html, $tmpPath);
+
+            $filename = str_replace(' ', '-', $document->title).'-'.$document->uuid.'.pdf';
+
+            return response()->download($tmpPath, $filename, ['Content-Type' => 'application/pdf']);
+        } catch (\Throwable $e) {
+            return $this->error('PDF generation failed: '.$e->getMessage(), 500);
+        }
     }
 
     /**

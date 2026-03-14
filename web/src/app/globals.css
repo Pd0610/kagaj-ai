@@ -47,73 +47,104 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * KagajAI Design System
+ *
+ * Professional document SaaS for Nepal CA firms.
+ * Deep sky blue primary, emerald accent, warm neutrals.
+ * Flat Design + Soft UI Evolution hybrid.
+ * Designed for non-technical accountants who generate documents daily.
+ *
+ * Palette: ui-ux-pro-max "Job Board/Recruitment" — Professional blue + success green
+ * Typography: Plus Jakarta Sans ("Friendly SaaS" pairing)
+ * Style: Flat + Soft UI Evolution — clean, WCAG AA+, fast
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
+  /* Surface — warm gray base, pure white cards */
+  --background: hsl(210 20% 98%);
+  --foreground: hsl(213 27% 14%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(213 27% 14%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(213 27% 14%);
+
+  /* Primary — Sky 600: deep, trustworthy, professional */
+  --primary: hsl(200 98% 39%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  /* Secondary — Slate 100: subtle background */
+  --secondary: hsl(210 40% 96%);
+  --secondary-foreground: hsl(215 25% 27%);
+
+  /* Muted — Slate 100/500: subdued text and backgrounds */
+  --muted: hsl(210 40% 96%);
+  --muted-foreground: hsl(215 16% 47%);
+
+  /* Accent — Emerald: fresh, action-oriented */
+  --accent: hsl(152 76% 94%);
+  --accent-foreground: hsl(160 84% 29%);
+
+  /* Destructive */
+  --destructive: hsl(0 84% 60%);
+
+  /* Border & Input — Slate 200: clean separation */
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(200 98% 39%);
+
+  /* Charts — distinctive, colorblind-safe */
+  --chart-1: hsl(200 98% 39%);
+  --chart-2: hsl(160 84% 39%);
+  --chart-3: hsl(38 92% 50%);
+  --chart-4: hsl(263 70% 50%);
+  --chart-5: hsl(0 84% 60%);
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Sidebar — clean white, blue active states */
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(215 25% 27%);
+  --sidebar-primary: hsl(200 98% 39%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(200 95% 95%);
+  --sidebar-accent-foreground: hsl(200 98% 32%);
+  --sidebar-border: hsl(214 32% 91%);
+  --sidebar-ring: hsl(200 98% 39%);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0.00 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: hsl(215 28% 6%);
+  --foreground: hsl(210 20% 96%);
+  --card: hsl(215 25% 10%);
+  --card-foreground: hsl(210 20% 96%);
+  --popover: hsl(215 25% 10%);
+  --popover-foreground: hsl(210 20% 96%);
+  --primary: hsl(200 95% 52%);
+  --primary-foreground: hsl(215 28% 6%);
+  --secondary: hsl(215 20% 14%);
+  --secondary-foreground: hsl(210 20% 90%);
+  --muted: hsl(215 20% 14%);
+  --muted-foreground: hsl(215 16% 55%);
+  --accent: hsl(160 40% 14%);
+  --accent-foreground: hsl(160 70% 55%);
+  --destructive: hsl(0 70% 55%);
+  --border: hsl(215 20% 16%);
+  --input: hsl(215 20% 18%);
+  --ring: hsl(200 95% 52%);
+  --chart-1: hsl(200 80% 55%);
+  --chart-2: hsl(160 70% 45%);
+  --chart-3: hsl(38 80% 55%);
+  --chart-4: hsl(263 60% 60%);
+  --chart-5: hsl(0 70% 55%);
+
+  --sidebar: hsl(215 28% 8%);
+  --sidebar-foreground: hsl(210 20% 88%);
+  --sidebar-primary: hsl(200 95% 52%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(200 30% 16%);
+  --sidebar-accent-foreground: hsl(200 80% 70%);
+  --sidebar-border: hsl(215 20% 16%);
+  --sidebar-ring: hsl(200 95% 52%);
 }
 
 @layer base {
@@ -122,8 +153,77 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
+  }
+
+  /* Typography — Plus Jakarta Sans, premium SaaS feel */
+  h1 {
+    @apply text-2xl font-bold;
+    letter-spacing: -0.025em;
+  }
+  h2 {
+    @apply text-xl font-semibold;
+    letter-spacing: -0.02em;
+  }
+  h3 {
+    @apply text-base font-semibold;
+    letter-spacing: -0.01em;
+  }
+
+  /* Pointer cursor on all clickable elements */
+  button,
+  [role="button"],
+  a,
+  select,
+  [data-slot="select-trigger"],
+  [data-slot="sidebar-menu-button"] {
+    cursor: pointer;
+  }
+
+  /* Global smooth transitions — 150ms flat design spec */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+
+@layer components {
+  /* Card with hover lift — Soft UI Evolution style */
+  .card-hover {
+    @apply border bg-card shadow-sm;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    @apply shadow-md border-primary/20;
+    transform: translateY(-2px);
+  }
+
+  /* Stat card — for dashboard metrics */
+  .stat-card {
+    @apply rounded-xl border bg-card p-5;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .stat-card:hover {
+    @apply shadow-sm;
+  }
+
+  /* Category pill — for filter chips */
+  .category-pill {
+    @apply inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors;
+  }
+  .category-pill-active {
+    @apply bg-primary text-primary-foreground shadow-sm;
+  }
+  .category-pill-inactive {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
   }
 }
