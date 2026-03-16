@@ -14,7 +14,6 @@
 /api/npm-debug.log
 /api/yarn-error.log
 /api/scripts/node_modules
-/api/scripts/package-lock.json
 
 # === Next.js (web/) ===
 /web/node_modules
