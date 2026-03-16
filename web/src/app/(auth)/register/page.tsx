@@ -1,51 +1,51 @@
 "use client";
 
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-import { api, ApiError } from "@/lib/api-client";
+import { useAuth, ApiError } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Loader2Icon } from "lucide-react";
+import { AlertCircle, FileText, Building2, Languages } from "lucide-react";
+
+const benefits = [
+  { icon: FileText, text: "5 free documents every month" },
+  { icon: Building2, text: "20+ legally verified templates" },
+  { icon: Languages, text: "Perfect bilingual PDF output" },
+];
 
 export default function RegisterPage() {
+  const { register } = useAuth();
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [generalError, setGeneralError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrors({});
-    setGeneralError("");
     setLoading(true);
 
+    const form = new FormData(e.currentTarget);
+    const name = form.get("name") as string;
+    const email = form.get("email") as string;
+    const password = form.get("password") as string;
+
     try {
-      const res = await api.post<{ user: unknown; token: string }>(
-        "/auth/register",
-        {
-          name,
-          email,
-          password,
-          password_confirmation: passwordConfirmation,
-        },
-      );
-      localStorage.setItem("token", res.data.token);
-      router.push("/templates");
+      await register(name, email, password);
+      router.push("/companies");
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.body.errors) {
-          setErrors(err.body.errors);
-        } else {
-          setGeneralError(err.body.message ?? "Registration failed");
+      if (err instanceof ApiError && err.envelope.errors) {
+        const fieldErrors: Record<string, string> = {};
+        for (const [key, messages] of Object.entries(err.envelope.errors)) {
+          const msg = messages as string[];
+          if (msg[0]) fieldErrors[key] = msg[0];
         }
+        setErrors(fieldErrors);
+      } else if (err instanceof ApiError) {
+        setErrors({ form: err.message });
       } else {
-        setGeneralError("Network error. Please try again.");
+        setErrors({ form: "Something went wrong. Please try again." });
       }
     } finally {
       setLoading(false);
@@ -53,114 +53,114 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Create your account
+    <div className="rounded-xl border border-border bg-card p-8 shadow-md shadow-neutral-900/5">
+      {/* Header */}
+      <div className="text-center">
+        <Link
+          href="/"
+          className="text-2xl font-bold tracking-tight text-primary"
+        >
+          Kagaj<span className="text-gold">AI</span>
+        </Link>
+        <h1 className="mt-4 text-xl font-semibold tracking-[-0.01em] text-foreground">
+          Create your free account
         </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Start generating documents with AI
+        <p className="mt-1 text-sm text-muted-foreground">
+          Start generating documents in minutes
         </p>
       </div>
 
-      {generalError && (
-        <div className="mb-5 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-          {generalError}
+      {/* Benefits */}
+      <div className="mt-5 rounded-lg bg-primary-subtle/50 p-4">
+        <div className="flex flex-col gap-2.5">
+          {benefits.map((benefit) => (
+            <div
+              key={benefit.text}
+              className="flex items-center gap-2.5 text-sm font-medium text-primary-subtle-fg"
+            >
+              <benefit.icon className="h-4 w-4 shrink-0 text-primary" />
+              {benefit.text}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-1.5">
-          <Label htmlFor="name" className="text-sm font-medium">
-            Full Name
-          </Label>
-          <Input
-            id="name"
-            type="text"
-            required
-            placeholder="Your full name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-invalid={!!errors.name}
-            className="h-11"
-          />
-          {errors.name && (
-            <p className="text-xs text-destructive">{errors.name[0]}</p>
-          )}
-        </div>
+      {/* Form */}
+      <form onSubmit={onSubmit} className="mt-6">
+        {errors.form && (
+          <div
+            className="mb-4 flex items-start gap-2 rounded-lg bg-destructive-subtle p-3"
+            role="alert"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">{errors.form}</p>
+          </div>
+        )}
 
-        <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-sm font-medium">
-            Email
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            required
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-invalid={!!errors.email}
-            className="h-11"
-          />
-          {errors.email && (
-            <p className="text-xs text-destructive">{errors.email[0]}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-sm font-medium">
-            Password
-          </Label>
-          <Input
-            id="password"
-            type="password"
-            required
-            minLength={8}
-            placeholder="At least 8 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            aria-invalid={!!errors.password}
-            className="h-11"
-          />
-          {errors.password && (
-            <p className="text-xs text-destructive">{errors.password[0]}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="password_confirmation" className="text-sm font-medium">
-            Confirm Password
-          </Label>
-          <Input
-            id="password_confirmation"
-            type="password"
-            required
-            minLength={8}
-            placeholder="Confirm your password"
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-            className="h-11"
-          />
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Full name</Label>
+            <Input id="name" name="name" required autoComplete="name" />
+            {errors.name && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.name}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+            {errors.email && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.email}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="new-password"
+              minLength={8}
+              placeholder="Minimum 8 characters"
+            />
+            {errors.password && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.password}
+              </p>
+            )}
+          </div>
         </div>
 
-        <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2Icon className="mr-2 size-4 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create Account"
-          )}
+        <Button
+          type="submit"
+          className="mt-6 h-10 w-full text-[15px] font-semibold transition-colors duration-150 hover:bg-primary-hover"
+          disabled={loading}
+        >
+          {loading ? "Creating account..." : "Create free account"}
         </Button>
+
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          No credit card required
+        </p>
       </form>
 
+      {/* Footer */}
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-semibold text-primary hover:text-primary/80"
+          className="font-medium text-primary transition-colors duration-150 hover:text-primary-hover"
         >
           Sign in
         </Link>

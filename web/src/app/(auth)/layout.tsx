@@ -1,9 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import {
-  FileTextIcon,
-  ShieldCheckIcon,
-  ZapIcon,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { AuthProvider } from "@/contexts/auth-context";
 
 export default function AuthLayout({
   children,
@@ -11,96 +10,31 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      {/* Left panel — branding + value props */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] flex-col justify-between bg-primary p-10 text-primary-foreground">
-        <div>
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/20 text-lg font-bold backdrop-blur-sm">
-              K
-            </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight">KagajAI</span>
-              <span className="block text-xs text-white/70">
-                Smart Document Platform
-              </span>
-            </div>
+    <AuthProvider>
+      <div className="relative flex min-h-screen flex-col bg-background px-4 pt-12 pb-8 md:pt-20">
+        {/* Decorative background */}
+        <div className="absolute top-0 right-0 -z-10 h-96 w-96 rounded-full bg-primary-subtle opacity-30 blur-3xl" />
+        <div className="absolute bottom-0 left-0 -z-10 h-72 w-72 rounded-full bg-gold/5 opacity-40 blur-3xl" />
+
+        {/* Back link */}
+        <div className="mx-auto w-full max-w-sm">
+          <Link
+            href="/"
+            className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to home
           </Link>
         </div>
 
-        <div className="space-y-8">
-          <h2 className="text-2xl font-bold leading-snug tracking-tight">
-            Generate government documents
-            <br />
-            in minutes, not hours.
-          </h2>
+        {/* Form card */}
+        <div className="mx-auto w-full max-w-sm">{children}</div>
 
-          <div className="space-y-5">
-            <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                <ZapIcon className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">AI-Powered Generation</p>
-                <p className="text-sm text-white/70">
-                  Board resolutions, AGM notices, annual returns — generated
-                  instantly with AI.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                <FileTextIcon className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Nepal-Ready Templates</p>
-                <p className="text-sm text-white/70">
-                  Compliant with OCR Nepal requirements. English &amp; Nepali
-                  bilingual output.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                <ShieldCheckIcon className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Built for CA Firms</p>
-                <p className="text-sm text-white/70">
-                  Manage 50–200 companies. Auto-fill company data across all
-                  documents.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-xs text-white/50">
+        {/* Footer */}
+        <p className="mt-auto pt-8 text-center text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} KagajAI. All rights reserved.
         </p>
       </div>
-
-      {/* Right panel — form area */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-10">
-        {/* Mobile logo (hidden on desktop since left panel shows it) */}
-        <div className="mb-8 flex items-center gap-3 lg:hidden">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground text-lg font-bold">
-              K
-            </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight">KagajAI</span>
-              <span className="block text-xs text-muted-foreground">
-                Smart Document Platform
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        <div className="w-full max-w-[400px]">{children}</div>
-      </div>
-    </div>
+    </AuthProvider>
   );
 }

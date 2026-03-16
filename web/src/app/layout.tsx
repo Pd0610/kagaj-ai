@@ -1,22 +1,12 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/noto-sans-devanagari";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "KagajAI - AI-Powered Document Generation for Nepal",
+  title: "KagajAI — Document Generation for Nepal",
   description:
-    "Generate government documents, legal papers, and official forms with AI assistance. Fast, accurate, and available in Nepali.",
+    "AI-powered government document generation platform for Nepal.",
 };
 
 export default function RootLayout({
@@ -26,11 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${plusJakarta.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

@@ -1,6 +1,2 @@
-# KagajAI — Root Docker Compose
-# Includes Sail's config for the API stack.
-# Next.js runs natively (npm run dev) to avoid slow Docker volume mounts on macOS.
-
 include:
-  - path: ./api/compose.yaml
+    - ./api/compose.yaml

@@ -1,57 +1,118 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api-client";
-import {
-  Building2Icon,
-  ChevronsUpDownIcon,
-  FileTextIcon,
-  LayoutTemplateIcon,
-  LogOutIcon,
-  PanelLeftIcon,
-} from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Building2, FileText, Crown } from "lucide-react";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { Plan, PlanLabels } from "@/types/models";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
-  { href: "/templates", label: "Templates", icon: LayoutTemplateIcon },
-  { href: "/companies", label: "Companies", icon: Building2Icon },
-  { href: "/documents", label: "My Documents", icon: FileTextIcon },
-];
+  { href: "/companies", label: "Companies", icon: Building2 },
+  { href: "/templates", label: "Templates", icon: FileText },
+] as const;
 
-function getBreadcrumb(pathname: string): string {
-  if (pathname.startsWith("/documents")) return "Documents";
-  if (pathname.startsWith("/templates")) return "Templates";
-  if (pathname.startsWith("/companies")) return "Companies";
-  if (pathname.startsWith("/dashboard")) return "Dashboard";
-  return "Dashboard";
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const isFree = user?.plan === Plan.Free;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+          <div className="flex items-center gap-8">
+            <Link
+              href="/companies"
+              className="text-lg font-semibold tracking-tight text-primary"
+            >
+              KagajAI
+            </Link>
+            <nav className="flex items-center gap-1">
+              {navItems.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+          <div className="flex items-center gap-3">
+            {isFree && (
+              <button
+                onClick={() => {/* TODO: upgrade flow */}}
+                className="flex items-center gap-1 rounded-full bg-gold/10 px-2.5 py-1 text-xs font-medium text-gold-foreground transition-colors hover:bg-gold/20"
+              >
+                <Crown className="h-3 w-3" />
+                Upgrade
+              </button>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {user?.name}
+              </span>
+              {user?.plan && (
+                <Badge
+                  variant="secondary"
+                  className={
+                    user.plan === Plan.Pro
+                      ? "bg-gold/10 text-gold-foreground"
+                      : undefined
+                  }
+                >
+                  {PlanLabels[user.plan]}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await logout();
+                router.push("/login");
+              }}
+            >
+              Sign out
+            </Button>
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+    </div>
+  );
 }
 
 export default function DashboardLayout({
@@ -59,153 +120,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [authChecked, setAuthChecked] = useState(false);
-  const [hasToken, setHasToken] = useState(true);
-  const [userName, setUserName] = useState("");
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.replace("/login");
-    } else {
-      setHasToken(true);
-      api
-        .get<{ name: string; email: string }>("/auth/me")
-        .then((res) => setUserName(res.data.name))
-        .catch(() => {});
-    }
-    setAuthChecked(true);
-  }, [router]);
-
-  if (!authChecked || !hasToken) {
-    return null;
-  }
-
-  async function handleLogout() {
-    try {
-      await api.post("/auth/logout");
-    } catch {
-      // Even if the API call fails, clear token locally
-    }
-    localStorage.removeItem("token");
-    router.push("/login");
-  }
-
-  const initials = userName
-    ? userName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "U";
-
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <div className="flex items-center justify-between">
-                <SidebarMenuButton
-                  size="lg"
-                  render={<Link href="/templates" />}
-                  className="flex-1"
-                >
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-                    K
-                  </div>
-                  <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-                    <span className="font-semibold tracking-tight text-foreground">
-                      KagajAI
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      Document Platform
-                    </span>
-                  </div>
-                </SidebarMenuButton>
-                <SidebarTrigger className="size-8 shrink-0 text-muted-foreground hover:text-foreground" />
-              </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={pathname.startsWith(item.href)}
-                      tooltip={item.label}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <SidebarMenuButton
-                      size="lg"
-                      className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
-                    />
-                  }
-                >
-                  <Avatar className="size-8 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-0.5 leading-none text-left group-data-[collapsible=icon]:hidden">
-                    <span className="truncate text-sm font-medium">
-                      {userName || "Account"}
-                    </span>
-                  </div>
-                  <ChevronsUpDownIcon className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="top"
-                  className="min-w-56"
-                  align="start"
-                >
-                  <DropdownMenuItem onClick={handleLogout} variant="destructive">
-                    <LogOutIcon className="size-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-
-      <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>{getBreadcrumb(pathname)}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-
-        <main className="flex-1 px-6 py-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <AuthProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </AuthProvider>
   );
 }

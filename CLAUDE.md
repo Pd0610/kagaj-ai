@@ -1,83 +1,67 @@
-# KagajAI — Project Instructions
+# KagajAI
 
 > AI-powered government document generation platform for Nepal.
 
-## Session Protocol — MANDATORY
+## Architecture
 
-All business intelligence lives in the auto memory directory (never in this repo).
+- **Monorepo**: `api/` (Laravel 12) + `web/` (Next.js 15) — D17
+- **Dev env**: Sail (PHP 8.4, PostgreSQL 16, Redis 7) + native Node 22
+- **API port**: 8080
+- **ID strategy**: UUID primary keys everywhere. No bigint. No dual columns. `HasUuids` trait. — D23
+- **API envelope**: `{ success, data, message, errors }` on every response
+- **Money**: Paisa (integer, NPR × 100). Never floats.
+- **Auth**: Sanctum token-based
+- **PDF**: Puppeteer Node microservice — D13
 
-### Start of Session
-1. Read `memory/MEMORY.md` — quick context
-2. Read latest `memory/sessions/YYYY-MM-DD-session-NN.md` — last session's full context
-3. Check `memory/decisions/README.md` — what's been decided
-4. Check `memory/research/` if relevant
+## Code Standards
 
-### During Session
-- Log every non-trivial decision with ID, reasoning, and alternatives
-- Note every discussion point — casual conversations lead to decisions later
-- Track open questions
+- **DRY via services.** Thin controllers → Form Requests → Services → API Resources.
+- **SOLID.** Single-responsibility services. No god classes.
+- **Enums for all status/type fields.** PHP 8.4 backed enums (`App\Enums\*`).
+- **Form Requests on every endpoint.** Validation never in controllers.
+- **API Resources on every response.** No raw model serialization.
+- **No dead code.** If nothing calls it, delete it.
 
-### End of Session — MANDATORY
-1. Create `memory/sessions/YYYY-MM-DD-session-NN.md` with:
-   - **Summary**: 1-2 lines
-   - **Key Decisions**: Each with ID (D7, D8...), reasoning, alternatives considered
-   - **What We Did**: Actions taken
-   - **What We Discussed**: Discussion points (even without decisions)
-   - **Open Questions**: Unresolved for future
-   - **For Next Session**: Concrete next steps
-2. Update `memory/decisions/README.md` index if new decisions were made
-3. Update `memory/MEMORY.md` status line if project phase changed
+## Quality Gates
 
-### Why This Matters
-Surya has context between sessions. Jarvis doesn't. Session files ARE Jarvis's memory.
+Every commit must pass:
+- PHPStan level 6 (Larastan)
+- Pint (PSR-12)
+- PHPUnit feature tests (happy path + auth + validation)
+- TypeScript strict (`strict: true`, `noUncheckedIndexedAccess: true`)
+- ESLint zero warnings
+- Next.js production build
 
-## Code Conventions
+## Knowledge Base
 
-### General
-- **Monorepo**: `api/` (Laravel) + `web/` (Next.js) in one repo (D17)
-- **Dev env**: Sail for API stack (PHP 8.4, PostgreSQL 16, Redis 7), Next.js runs natively (Node 22)
-- **API port**: 8080 (avoids conflict with wagering platform on 80)
+Each subsystem is documented in `.claude/` directories. **Read the relevant doc before working on that area** — no need to explore the codebase from scratch.
 
-### PHP / Laravel (`api/`)
-- **API-only** — no Blade views, no Vite, no web routes
-- **Enums**: PHP backed enums for all status/type fields (`App\Enums\*`)
-- **API envelope**: Every response wraps in `{ success, data, message, errors }`
-- **Money in paisa**: All amounts stored as integers (NPR * 100) — never floats
-- **UUID routing**: Public URLs use UUIDs, internal joins use bigint IDs
-- **HasUuid trait**: Auto-generates UUID on model creation, sets `getRouteKeyName` to `uuid`
-- **ForceJsonResponse middleware**: All requests get JSON responses, never HTML
-- **Rate limiting**: 60/min auth, 20/min public, 10/min chat
-- **PHPStan level 6** via Larastan
-- **Pint** for code style (ships with Laravel, PSR-12)
-- **Namespace**: Controllers at `App\Http\Controllers\Api\V1\*`
-- **Sanctum** for auth (token-based, `HasApiTokens` trait on User model)
+- **`api/.claude/README.md`** — API knowledge index (auth, companies, templates, database, services, testing, infrastructure)
+- **`web/.claude/README.md`** — Web knowledge index (auth, routing, components, api-client, styling)
 
-### TypeScript / Next.js (`web/`)
-- **Strict mode**: `strict: true`, `noUncheckedIndexedAccess: true`
-- **App Router** with route groups: `(auth)`, `(dashboard)`, `chat/[uuid]`
-- **Dashboard layout**: Collapsible sidebar (shadcn `SidebarProvider`), not top-nav
-- **Color system**: Hue-variable-based — change 3 CSS vars to re-theme (see `web/CLAUDE.md`)
-- **API client**: `src/lib/api-client.ts` with typed envelope wrapper
-- **Types**: `src/types/models.ts` mirrors Laravel models/enums
-- **Import alias**: `@/*` maps to `./src/*`
+**Read before working**: Read the relevant doc before touching that subsystem. Zero exploration needed.
 
-### Testing
-- **PHPUnit** for API tests (`sail test`)
-- Feature tests use `RefreshDatabase` trait
-- Auth tests cover: register, login, logout, me, update, validation, unauthorized
+**Update after completing**: When a task changes any subsystem, update its `.claude/` doc in the same commit. New files, new routes, schema changes, new components — all must be reflected. If a subsystem doc doesn't exist yet, create one and add it to the README index.
 
-### Docker
-- Root `docker-compose.yml` includes Sail via `include: [./api/compose.yaml]`
-- Sail services: laravel.test, pgsql, redis, mailpit
-- Next.js runs natively (`npm run dev` in `web/`)
+## Stack-Specific Conventions
 
-### CI/CD
-- `api.yml` — PHP 8.4, PostgreSQL service, Pint + PHPStan + PHPUnit (triggered by `api/**`)
-- `web.yml` — Node 22, TypeScript check + ESLint + build (triggered by `web/**`)
+- `api/CLAUDE.md` — Laravel patterns, migrations, testing
+- `web/CLAUDE.md` — Next.js patterns, components, brand system
+
+## Frontend Design Rules
+
+- **Brand guidelines are mandatory.** Read `~/Workspace/claude-skills/kagaj-ai/features/brand-guidelines.md` before any UI work. It is the definitive reference.
+- **Invoke `/ui-ux-pro-max` skill** before designing any page, component, or layout. No ad-hoc design decisions.
+- **Use `web/CLAUDE.md`** for all frontend conventions — tokens, spacing, typography, component specs.
+- **All colors via CSS tokens.** `bg-primary`, `text-muted-foreground`, `bg-primary-subtle` — never raw Tailwind (`gray-100`, `slate-200`).
+- **Warm cream background** (`bg-background`), white cards (`bg-card`). Never `bg-white` for page backgrounds.
+- **Gold accent sparingly.** Upgrade CTAs, decorative dividers. Never as text on light backgrounds.
+- **Verify visually.** Screenshot with Playwright after building any UI. Don't trust code alone.
 
 ## Rules
-- **Business intelligence stays in memory/, never in git.** No business plans, competitive analysis, pricing strategy, or session logs in the repo.
-- Every session gets a session file. No exceptions.
-- Decisions are numbered and indexed.
-- Research is saved, not repeated.
-- When in doubt, check memory/ before asking Surya to repeat context.
+
+- **Business intelligence stays in memory/, never in git.** No business plans, pricing, competitive analysis.
+- **Backend-first.** No frontend page without a working, tested API behind it.
+- **Tier logic is backend-enforced.** Frontend shows limits, backend enforces them.
+- **No premature abstraction.** Build for what exists today, not what might exist tomorrow.
+- **Brand from day 1.** Use CSS tokens. Never hardcode colors.
