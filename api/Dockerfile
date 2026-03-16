@@ -53,7 +53,7 @@ RUN composer dump-autoload --optimize
 
 # Install Puppeteer dependencies
 WORKDIR /var/www/html/scripts
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
