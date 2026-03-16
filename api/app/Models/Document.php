@@ -2,81 +2,65 @@
 
 namespace App\Models;
 
-use App\Enums\DocumentStatus;
-use App\Enums\Language;
-use App\Traits\HasUuid;
+use Database\Factories\DocumentFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document extends Model
 {
-    use HasFactory, HasUuid, SoftDeletes;
+    /** @use HasFactory<DocumentFactory> */
+    use HasFactory, HasUuids;
 
+    /** @var list<string> */
     protected $fillable = [
-        'uuid',
         'user_id',
         'company_id',
         'template_id',
-        'template_version',
+        'template_version_id',
         'title',
-        'status',
+        'reference_number',
         'slot_data',
-        'language',
         'pdf_path',
-        'is_watermarked',
     ];
 
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'slot_data' => 'json',
-            'status' => DocumentStatus::class,
-            'language' => Language::class,
-            'is_watermarked' => 'boolean',
-            'template_version' => 'integer',
+            'slot_data' => 'array',
         ];
     }
 
-    // Relationships
-
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function template(): BelongsTo
-    {
-        return $this->belongsTo(Template::class);
-    }
-
+    /** @return BelongsTo<Company, $this> */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
-    public function conversation(): HasOne
+    /** @return BelongsTo<Template, $this> */
+    public function template(): BelongsTo
     {
-        return $this->hasOne(Conversation::class);
+        return $this->belongsTo(Template::class);
     }
 
-    public function payments(): HasMany
+    /** @return BelongsTo<TemplateVersion, $this> */
+    public function templateVersion(): BelongsTo
     {
-        return $this->hasMany(Payment::class);
+        return $this->belongsTo(TemplateVersion::class);
     }
 
-    // Scopes
-
-    public function scopeCompleted($query)
+    /** @param Builder<Document> $query */
+    public function scopeCurrentMonth(Builder $query): void
     {
-        return $query->where('status', DocumentStatus::Completed);
-    }
-
-    public function scopeForUser($query, int $userId)
-    {
-        return $query->where('user_id', $userId);
+        $query->where('created_at', '>=', now()->startOfMonth());
     }
 }

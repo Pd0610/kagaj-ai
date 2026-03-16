@@ -2,36 +2,42 @@
 
 namespace Database\Factories;
 
+use App\Enums\TemplateCategory;
+use App\Models\Template;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Template> */
+/**
+ * @extends Factory<Template>
+ */
 class TemplateFactory extends Factory
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         return [
-            'slug' => fake()->unique()->slug(3),
-            'name_en' => fake()->sentence(3),
-            'name_ne' => 'नमूना टेम्प्लेट',
-            'category' => fake()->randomElement(['ocr', 'tax', 'rental', 'employment']),
-            'description_en' => fake()->paragraph(),
+            'name' => fake()->sentence(3),
+            'name_ne' => null,
+            'category' => fake()->randomElement(TemplateCategory::cases()),
+            'description' => fake()->sentence(),
             'description_ne' => null,
-            'schema' => ['slots' => []],
-            'html_body' => '<div>{{ $slot_data }}</div>',
-            'version' => 1,
-            'is_published' => true,
-            'price' => 0,
-            'sort_order' => 0,
+            'is_premium' => false,
+            'is_active' => true,
         ];
     }
 
-    public function published(): static
+    public function premium(): static
     {
-        return $this->state(fn () => ['is_published' => true]);
+        return $this->state(fn (array $attributes) => [
+            'is_premium' => true,
+        ]);
     }
 
-    public function draft(): static
+    public function inactive(): static
     {
-        return $this->state(fn () => ['is_published' => false]);
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
     }
 }

@@ -2,96 +2,56 @@
 
 namespace App\Models;
 
-use App\Enums\Language;
-use App\Enums\UserTier;
+use App\Enums\Plan;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property Plan $plan
+ */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
+    /** @var list<string> */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'phone',
-        'language_preference',
-        'tier',
+        'plan',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'language_preference' => Language::class,
-            'tier' => UserTier::class,
-        ];
-    }
-
-    // Relationships
-
+    /** @return HasMany<Company, $this> */
     public function companies(): HasMany
     {
         return $this->hasMany(Company::class);
     }
 
+    /** @return HasMany<Document, $this> */
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
     }
 
-    public function conversations(): HasMany
-    {
-        return $this->hasMany(Conversation::class);
-    }
+    /** @var list<string> */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    public function subscriptions(): HasMany
+    /** @return array<string, string> */
+    protected function casts(): array
     {
-        return $this->hasMany(Subscription::class);
-    }
-
-    public function activeSubscription(): HasOne
-    {
-        return $this->hasOne(Subscription::class)->where('status', 'active')->latestOfMany();
-    }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class);
-    }
-
-    public function usageTracking(): HasMany
-    {
-        return $this->hasMany(UsageTracking::class);
-    }
-
-    // Scopes & helpers
-
-    public function isFree(): bool
-    {
-        return $this->tier === UserTier::Free;
-    }
-
-    public function isPro(): bool
-    {
-        return $this->tier === UserTier::Pro;
-    }
-
-    public function isBusiness(): bool
-    {
-        return $this->tier === UserTier::Business;
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'plan' => Plan::class,
+        ];
     }
 }

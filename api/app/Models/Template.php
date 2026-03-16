@@ -2,71 +2,51 @@
 
 namespace App\Models;
 
+use App\Enums\TemplateCategory;
+use Database\Factories\TemplateFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Template extends Model
 {
-    use HasFactory, SoftDeletes;
+    /** @use HasFactory<TemplateFactory> */
+    use HasFactory, HasUuids;
 
+    /** @var list<string> */
     protected $fillable = [
-        'slug',
-        'name_en',
+        'name',
         'name_ne',
         'category',
-        'description_en',
+        'description',
         'description_ne',
-        'schema',
-        'html_body',
-        'pdf_config',
-        'version',
-        'is_published',
-        'price',
-        'sort_order',
+        'is_premium',
+        'is_active',
     ];
 
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'schema' => 'json',
-            'pdf_config' => 'json',
-            'is_published' => 'boolean',
-            'version' => 'integer',
-            'price' => 'integer',
-            'sort_order' => 'integer',
+            'category' => TemplateCategory::class,
+            'is_premium' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
-    public function getRouteKeyName(): string
+    /** @return HasMany<TemplateVersion, $this> */
+    public function versions(): HasMany
     {
-        return 'slug';
+        return $this->hasMany(TemplateVersion::class);
     }
 
-    // Relationships
-
-    public function documents(): HasMany
+    /** @return HasOne<TemplateVersion, $this> */
+    public function latestPublishedVersion(): HasOne
     {
-        return $this->hasMany(Document::class);
-    }
-
-    // Scopes
-
-    public function scopePublished($query)
-    {
-        return $query->where('is_published', true);
-    }
-
-    public function scopeByCategory($query, string $category)
-    {
-        return $query->where('category', $category);
-    }
-
-    // Helpers
-
-    public function isFreeEligible(): bool
-    {
-        return $this->price === 0;
+        return $this->hasOne(TemplateVersion::class)
+            ->whereNotNull('published_at')
+            ->orderByDesc('version');
     }
 }

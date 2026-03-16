@@ -1,18 +1,7 @@
 {
-  "name": "scripts",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "private": true,
+  "type": "module",
   "dependencies": {
-    "@puppeteer/browsers": "^2.13.0",
-    "puppeteer": "^24.38.0",
-    "puppeteer-core": "^24.38.0"
+    "puppeteer": "^24.0.0"
   }
 }

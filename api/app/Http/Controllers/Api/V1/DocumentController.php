@@ -2,189 +2,89 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Anuzpandey\LaravelNepaliDate\LaravelNepaliDate;
-use App\Enums\DocumentStatus;
-use App\Enums\Language;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\V1\DocumentResource;
+use App\Http\Requests\StoreDocumentRequest;
+use App\Http\Resources\DocumentResource;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\Template;
-use App\Services\DocumentRenderer;
-use App\Services\SlotValidator;
+use App\Models\User;
+use App\Services\DocumentService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
-        private readonly SlotValidator $slotValidator,
-        private readonly DocumentRenderer $renderer,
+        private readonly DocumentService $documentService,
     ) {}
+
+    public function store(StoreDocumentRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $template = Template::findOrFail($request->validated('template_id'));
+
+        $company = $request->filled('company_id')
+            ? Company::findOrFail($request->validated('company_id'))
+            : null;
+
+        /** @var array<string, string> $slotData */
+        $slotData = $request->validated('slot_data');
+
+        $document = $this->documentService->generate($user, $template, $slotData, $company);
+
+        return $this->success(
+            (new DocumentResource($document))->resolve(),
+            'Document generated',
+            201
+        );
+    }
 
     public function index(Request $request): JsonResponse
     {
-        $query = Document::where('user_id', $request->user()->id)
-            ->with('template:id,slug,name_en,name_ne,category,pdf_config')
-            ->latest();
+        /** @var User $user */
+        $user = $request->user();
 
-        if ($slug = $request->input('template_slug')) {
-            $query->whereHas('template', fn ($q) => $q->where('slug', $slug));
-        }
+        $documents = $user->documents()
+            ->latest()
+            ->get();
 
-        $documents = $query->paginate(min((int) $request->input('per_page', 20), 50));
-
-        return $this->paginated(DocumentResource::collection($documents));
+        return $this->success(
+            DocumentResource::collection($documents)->resolve(),
+            'Documents retrieved'
+        );
     }
 
-    public function store(Request $request): JsonResponse
+    public function show(Document $document): JsonResponse
     {
-        $request->validate([
-            'template_slug' => 'required|string|exists:templates,slug',
-            'slot_data' => 'required|array',
-            'language' => 'sometimes|string|in:en,ne',
-            'company_uuid' => 'nullable|string|exists:companies,uuid',
-        ]);
+        Gate::authorize('view', $document);
 
-        $template = Template::where('slug', $request->input('template_slug'))
-            ->published()
-            ->firstOrFail();
-
-        // Resolve company and merge pre-filled data with user-provided overrides
-        $companyId = null;
-        $slotData = $request->input('slot_data');
-
-        if ($companyUuid = $request->input('company_uuid')) {
-            $company = Company::where('uuid', $companyUuid)
-                ->where('user_id', $request->user()->id)
-                ->firstOrFail();
-
-            $companyId = $company->id;
-            // Company data as base, user slot_data overrides
-            $slotData = array_merge($company->toSlotData(), $slotData);
-        }
-
-        $slotData = $this->resolveSlotDefaults($slotData);
-        $errors = $this->slotValidator->validate($template, $slotData);
-
-        if (! empty($errors)) {
-            return $this->error('Validation failed', 422, $errors);
-        }
-
-        $language = Language::from($request->input('language', 'ne'));
-
-        $document = Document::create([
-            'user_id' => $request->user()->id,
-            'company_id' => $companyId,
-            'template_id' => $template->id,
-            'template_version' => $template->version,
-            'title' => $template->name_ne ?: $template->name_en,
-            'status' => DocumentStatus::Completed,
-            'slot_data' => $slotData,
-            'language' => $language,
-            'is_watermarked' => false,
-        ]);
-
-        $document->load('template:id,slug,name_en,name_ne,category,pdf_config');
-
-        return $this->created(new DocumentResource($document));
+        return $this->success(
+            (new DocumentResource($document))->resolve(),
+            'Document retrieved'
+        );
     }
 
-    public function show(Request $request, Document $document): JsonResponse
+    public function download(Document $document): StreamedResponse
     {
-        if ($document->user_id !== $request->user()->id) {
-            return $this->forbidden();
+        Gate::authorize('download', $document);
+
+        if ($document->pdf_path === null) {
+            abort(404, 'PDF not available.');
         }
 
-        $document->load('template:id,slug,name_en,name_ne,category,pdf_config');
-
-        return $this->success(new DocumentResource($document));
-    }
-
-    public function preview(Request $request, Document $document): JsonResponse
-    {
-        if ($document->user_id !== $request->user()->id) {
-            return $this->forbidden();
-        }
-
-        $template = $document->template;
-
-        if (! $template) {
-            return $this->error('Template not found', 404);
-        }
-
-        $html = $this->renderer->render($template, $document->slot_data ?? []);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'html' => $html,
-                'pdf_config' => $template->pdf_config,
-            ],
-            'message' => null,
-            'errors' => null,
-        ]);
-    }
-
-    public function download(Request $request, Document $document): BinaryFileResponse|JsonResponse
-    {
-        if ($document->user_id !== $request->user()->id) {
-            return $this->forbidden();
-        }
-
-        $template = $document->template;
-
-        if (! $template) {
-            return $this->error('Template not found', 404);
-        }
-
-        try {
-            $html = $this->renderer->render($template, $document->slot_data ?? []);
-            $tmpPath = sys_get_temp_dir()."/documents/{$document->uuid}.pdf";
-
-            if (! is_dir(dirname($tmpPath))) {
-                mkdir(dirname($tmpPath), 0755, true);
-            }
-
-            $this->renderer->generatePdf($html, $tmpPath);
-
-            $filename = str_replace(' ', '-', $document->title).'-'.$document->uuid.'.pdf';
-
-            return response()->download($tmpPath, $filename, ['Content-Type' => 'application/pdf']);
-        } catch (\Throwable $e) {
-            return $this->error('PDF generation failed: '.$e->getMessage(), 500);
-        }
-    }
-
-    /**
-     * Resolve magic default values like $TODAY_BS in slot data.
-     */
-    private function resolveSlotDefaults(array $slotData): array
-    {
-        foreach ($slotData as $key => $value) {
-            if ($value === '$TODAY_BS') {
-                $slotData[$key] = LaravelNepaliDate::from(now()->format('Y-m-d'))
-                    ->toNepaliDate(format: 'Y/m/d', locale: 'np');
-            }
-        }
-
-        return $slotData;
-    }
-
-    public function destroy(Request $request, Document $document): JsonResponse
-    {
-        if ($document->user_id !== $request->user()->id) {
-            return $this->forbidden();
-        }
-
-        if ($document->pdf_path && Storage::disk('local')->exists($document->pdf_path)) {
-            Storage::disk('local')->delete($document->pdf_path);
-        }
-
-        $document->delete();
-
-        return $this->success(null, 'Document deleted');
+        return Storage::disk('local')->download(
+            $document->pdf_path,
+            $document->reference_number.'.pdf',
+            ['Content-Type' => 'application/pdf']
+        );
     }
 }

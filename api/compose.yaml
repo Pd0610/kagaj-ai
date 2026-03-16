@@ -8,9 +8,6 @@ services:
         image: 'sail-8.5/app'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
-        dns:
-            - 8.8.8.8
-            - 8.8.4.4
         ports:
             - '${APP_PORT:-80}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
@@ -27,7 +24,6 @@ services:
         depends_on:
             - pgsql
             - redis
-            - mailpit
     pgsql:
         image: 'postgres:18-alpine'
         ports:
@@ -68,13 +64,6 @@ services:
                 - ping
             retries: 3
             timeout: 5s
-    mailpit:
-        image: 'axllent/mailpit:latest'
-        ports:
-            - '${FORWARD_MAILPIT_PORT:-1025}:1025'
-            - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
-        networks:
-            - sail
 networks:
     sail:
         driver: bridge
