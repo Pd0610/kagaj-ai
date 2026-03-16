@@ -11,6 +11,11 @@ class TemplateSeeder extends Seeder
 {
     public function run(): void
     {
+        // Skip if templates already exist (idempotent for production deploys)
+        if (Template::count() > 0) {
+            return;
+        }
+
         $templates = [
             [
                 'name' => 'Board Resolution',
