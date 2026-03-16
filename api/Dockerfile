@@ -68,12 +68,14 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY docker/php.ini "$PHP_INI_DIR/conf.d/99-kagajai.ini"
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Cache config/routes/views
+# Clear cached config (will be rebuilt at runtime with real env vars)
 RUN php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear
 
 EXPOSE 10000
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/local/bin/entrypoint.sh"]
